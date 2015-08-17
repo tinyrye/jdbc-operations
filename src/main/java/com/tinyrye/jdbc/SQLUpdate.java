@@ -3,39 +3,28 @@ package com.tinyrye.jdbc;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.List;
+import javax.sql.DataSource;
 
-public class SQLUpdate extends SQLOperation
+public class SQLUpdate extends SQLOperation<Integer>
 {
-	private String updateSql;
-	private ParameterSetter parameterSetter;
-	private PreparedStatement statement;
-	private int updateResult;
-
-	public SQLUpdate(Connection connection) {
-		super(connection);
+    private String sql;
+    
+	public SQLUpdate(DataSource connectionProvider) {
+		super(connectionProvider);
 	}
-
-	public SQLUpdate updateSql(String updateSql) { this.updateSql = updateSql; return this; }
-	public SQLUpdate parameterSetter(ParameterSetter parameterSetter) { this.parameterSetter = parameterSetter; return this; }
-	
+    
+	public SQLUpdate sql(String sql) { this.sql = sql; return this; }
+    public SQLUpdate parameterSetter(ParameterSetter parameterSetter) { super.parameterSetter(parameterSetter); return this; }
+    
 	@Override
-	public void performOperation() throws SQLException {
-		statement = connection.prepareStatement(updateSql);
-		if (parameterSetter != null) parameterSetter.setValues(statement);
-		updateResult = statement.executeUpdate();
-	}
-	
-	@Override
-	public void close() throws SQLException {
-		statement = close(statement);
-	}
-	
-	public int update() throws SQLException {
-		run();
-		return getUpdateResult();
-	}
-	
-	public int getUpdateResult() {
-		return updateResult;
+    protected Integer performOperation(Connection connection,
+    	List values,
+    	List<AutoCloseable> closeables) throws SQLException
+    {
+		PreparedStatement statement = connection.prepareStatement(sql);
+        closeables.add(statement);
+		parameterSetter.setValues(values, statement);
+		return statement.executeUpdate();
 	}
 }

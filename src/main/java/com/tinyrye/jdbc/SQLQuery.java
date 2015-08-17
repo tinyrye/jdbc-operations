@@ -6,40 +6,47 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.sql.DataSource;
 
-public class SQLQuery extends SQLOperation
+public class SQLQuery<T> extends SQLOperation<List<T>>
 {
-	private String querySql;
-	private ParameterSetter parameterSetter;
-	private ResultHandler rowHandler;
-	private PreparedStatement statement;
-	private ResultSet resultSet;
+    private String sql;
+    private RowConverter<T> rowConverter;
 
-	public SQLQuery(Connection connection) {
-		super(connection);
-	}
-
-	public SQLQuery querySql(String querySql) { this.querySql = querySql; return this; }
-	public SQLQuery parameterSetter(ParameterSetter parameterSetter) { this.parameterSetter = parameterSetter; return this; }
-
-	@Override
-	public void performOperation() throws SQLException {
-		statement = connection.prepareStatement(querySql);
-		if (parameterSetter != null) parameterSetter.setValues(statement);
-		resultSet = statement.executeQuery();
-		rowHandler.process(resultSet);
-	}
-
-	@Override
-	public void close() throws SQLException {
-		statement = close(statement);
-		resultSet = close(resultSet);
-	}
-	
-	public <T> List<T> queryRows(RowConverter<T> rowConverter) throws SQLException {
-		List<T> rowList = new ArrayList<T>();
-		rowHandler = rowConverter.pipeResultsTo(rowList);
-		run();
-		return rowList;
-	}
+    public SQLQuery(DataSource connectionProvider) {
+        super(connectionProvider);
+    }
+    
+    public SQLQuery<T> sql(String sql) { this.sql = sql; return this; }
+    public SQLQuery<T> parameterSetter(ParameterSetter parameterSetter) { super.parameterSetter(parameterSetter); return this; }
+    public SQLQuery<T> rowConverter(RowConverter<T> rowConverter) { this.rowConverter = rowConverter; return this; }
+    
+    public T callForFirst(OperationValues values)
+    {
+        List<T> results = call(values);
+        if (results != null) {
+            if (results.size() == 1) return results.get(0);
+            else throw new RuntimeException("More than one result.");
+        }
+        else return null;
+    }
+    
+    @Override
+    protected List<T> performOperation(Connection connection,
+        List values,
+        List<AutoCloseable> closeables) throws SQLException
+    {
+        PreparedStatement statement = null;
+        ResultSet resultSet = null;
+        List<T> resultValues = new ArrayList<T>();
+        statement = connection.prepareStatement(sql);
+        closeables.add(statement);
+        parameterSetter.setValues(values, statement);
+        resultSet = statement.executeQuery();
+        closeables.add(resultSet);
+        while (resultSet.next()) {
+            resultValues.add(rowConverter.convertRow(resultSet));
+        }
+        return resultValues;
+    }
 }
