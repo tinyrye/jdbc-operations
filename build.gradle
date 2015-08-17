@@ -10,10 +10,12 @@ repositories {
 }
 
 compileJava {
-	options.compilerArgs.add('-Xlint:unchecked')
+	// options.compilerArgs.add('-Xlint:unchecked')
 }
 
 dependencies {
-	compile "commons-dbcp:commons-dbcp:1.4"
-	compile "joda-time:joda-time:2.0"
+	compile "org.apache.commons:commons-dbcp2:2.1.1"
+    compile "com.tinyrye:io-operations:1.0.0-SNAPSHOT"
+    testCompile "junit:junit:4.8.2"
+    testCompile "org.mockito:mockito-all:1.9.5"
 }
