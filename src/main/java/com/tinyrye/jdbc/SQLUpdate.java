@@ -4,17 +4,22 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.function.Supplier;
 import javax.sql.DataSource;
 
+/**
+ * Meant for deletes or updates.
+ */
 public class SQLUpdate extends SQLOperation<Integer>
 {
-    private String sql;
+    private Supplier<String> sql;
     
 	public SQLUpdate(DataSource connectionProvider) {
 		super(connectionProvider);
 	}
     
-	public SQLUpdate sql(String sql) { this.sql = sql; return this; }
+	public SQLUpdate sql(String sql) { this.sql = (() -> sql); return this; }
+    public SQLUpdate sql(Supplier<String> sql) { this.sql = sql; return this; }
     public SQLUpdate parameterSetter(ParameterSetter parameterSetter) { super.parameterSetter(parameterSetter); return this; }
     
 	@Override
@@ -22,7 +27,7 @@ public class SQLUpdate extends SQLOperation<Integer>
     	List values,
     	List<AutoCloseable> closeables) throws SQLException
     {
-		PreparedStatement statement = connection.prepareStatement(sql);
+		PreparedStatement statement = connection.prepareStatement(sql.get());
         closeables.add(statement);
 		parameterSetter.setValues(values, statement);
 		return statement.executeUpdate();
