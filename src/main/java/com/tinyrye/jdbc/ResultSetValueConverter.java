@@ -44,31 +44,32 @@ public class ResultSetValueConverter
      * A function meant for a single {@link ConversionTypeMapping}
      */
     @FunctionalInterface
-    public interface Conversion<T> {
-        T convert(ResultSet rs, int columnNumber) throws SQLException;
+    public interface Conversion<T>
+    {
+        T convert(ResultSet resultSet, int columnNumber) throws SQLException;
     }
 
     private Map<ConversionTypeMapping<?>,Conversion<?>> conversions = new HashMap<ConversionTypeMapping<?>,Conversion<?>>();
     
     public ResultSetValueConverter()
     {
-        addConversions(Integer.class, (rs, colNum) -> rs.getObject(colNum, Integer.class), Types.BIGINT, Types.SMALLINT, Types.TINYINT, Types.INTEGER);
-        addConversions(Long.class, (rs, colNum) -> rs.getObject(colNum, Long.class), Types.BIGINT, Types.SMALLINT, Types.TINYINT, Types.INTEGER);
-        addConversions(Long.class, (rs, colNum) -> rs.getTimestamp(colNum).getTime(), Types.TIMESTAMP);
-        addConversions(Double.class, (rs, colNum) -> rs.getObject(colNum, Double.class), Types.REAL, Types.NUMERIC, Types.DOUBLE, Types.FLOAT, Types.DECIMAL);
-        addConversions(Float.class, (rs, colNum) -> rs.getObject(colNum, Float.class), Types.REAL, Types.NUMERIC, Types.DOUBLE, Types.FLOAT, Types.DECIMAL);
-        addConversions(BigDecimal.class, (rs, colNum) -> optional(rs.getObject(colNum, Double.class)).map(colVal -> new BigDecimal(colVal)).orElse(null), Types.REAL, Types.NUMERIC, Types.DOUBLE, Types.FLOAT, Types.DECIMAL);
-        addConversions(BigDecimal.class, (rs, colNum) -> optional(rs.getObject(colNum, Long.class)).map(colVal -> new BigDecimal(colVal)).orElse(null), Types.BIGINT, Types.SMALLINT, Types.TINYINT, Types.INTEGER);
+        addConversions(Integer.class, (rs, colNum) -> optional(rs, (Integer) rs.getInt(colNum)).orElse(null), Types.BIGINT, Types.SMALLINT, Types.TINYINT, Types.INTEGER);
+        addConversions(Long.class, (rs, colNum) -> optional(rs, (Long) rs.getLong(colNum)).orElse(null), Types.BIGINT, Types.SMALLINT, Types.TINYINT, Types.INTEGER);
+        addConversions(Long.class, (rs, colNum) -> optional(rs, rs.getTimestamp(colNum)).map(colVal -> colVal.getTime()).orElse(null), Types.TIMESTAMP);
+        addConversions(Double.class, (rs, colNum) -> optional(rs, (Double) rs.getDouble(colNum)).orElse(null), Types.REAL, Types.NUMERIC, Types.DOUBLE, Types.FLOAT, Types.DECIMAL);
+        addConversions(Float.class, (rs, colNum) -> optional(rs, (Float) rs.getFloat(colNum)).orElse(null), Types.REAL, Types.NUMERIC, Types.DOUBLE, Types.FLOAT, Types.DECIMAL);
+        addConversions(BigDecimal.class, (rs, colNum) -> optional(rs, (Double) rs.getDouble(colNum)).map(colVal -> new BigDecimal(colVal)).orElse(null), Types.REAL, Types.NUMERIC, Types.DOUBLE, Types.FLOAT, Types.DECIMAL);
+        addConversions(BigDecimal.class, (rs, colNum) -> optional(rs, (Long) rs.getLong(colNum)).map(colVal -> new BigDecimal(colVal)).orElse(null), Types.BIGINT, Types.SMALLINT, Types.TINYINT, Types.INTEGER);
         addConversions(String.class, (rs, colNum) -> rs.getString(colNum), Types.VARCHAR, Types.CHAR);
-        addConversions(Boolean.class, (rs, colNum) -> rs.getBoolean(colNum), Types.BOOLEAN, Types.BIT);
+        addConversions(Boolean.class, (rs, colNum) -> optional(rs, (Boolean) rs.getBoolean(colNum)).orElse(null), Types.BOOLEAN, Types.BIT);
           // ^^^ ASSUMPTION: the Driver's ResultSet.getBoolean handles BIT column type. ^^^
-        addConversions(Instant.class, (rs, colNum) -> optional(rs.getObject(colNum, Long.class)).map(colVal -> Instant.ofEpochMilli(colVal)).orElse(null), Types.BIGINT, Types.SMALLINT, Types.TINYINT, Types.INTEGER);
-        addConversions(Instant.class, (rs, colNum) -> optional(rs.getTimestamp(colNum)).map(colVal -> Instant.ofEpochMilli(colVal.getTime())).orElse(null), Types.TIMESTAMP);
-        addConversions(OffsetDateTime.class, (rs, colNum) -> optional(rs.getTimestamp(colNum)).map(colVal -> OffsetDateTime.ofInstant(Instant.ofEpochMilli(colVal.getTime()), ZoneId.of("UTC"))).orElse(null), Types.TIMESTAMP);
-        addConversions(OffsetDateTime.class, (rs, colNum) -> optional(rs.getObject(colNum, Long.class)).map(colVal -> OffsetDateTime.ofInstant(Instant.ofEpochMilli(colVal), ZoneId.of("UTC"))).orElse(null), Types.BIGINT, Types.SMALLINT, Types.TINYINT, Types.INTEGER);
+        addConversions(Instant.class, (rs, colNum) -> optional(rs, (Long) rs.getLong(colNum)).map(colVal -> Instant.ofEpochMilli(colVal)).orElse(null), Types.BIGINT, Types.SMALLINT, Types.TINYINT, Types.INTEGER);
+        addConversions(Instant.class, (rs, colNum) -> optional(rs, rs.getTimestamp(colNum)).map(colVal -> Instant.ofEpochMilli(colVal.getTime())).orElse(null), Types.TIMESTAMP);
+        addConversions(OffsetDateTime.class, (rs, colNum) -> optional(rs, rs.getTimestamp(colNum)).map(colVal -> OffsetDateTime.ofInstant(Instant.ofEpochMilli(colVal.getTime()), ZoneId.of("UTC"))).orElse(null), Types.TIMESTAMP);
+        addConversions(OffsetDateTime.class, (rs, colNum) -> optional(rs, (Long) rs.getLong(colNum)).map(colVal -> OffsetDateTime.ofInstant(Instant.ofEpochMilli(colVal), ZoneId.of("UTC"))).orElse(null), Types.BIGINT, Types.SMALLINT, Types.TINYINT, Types.INTEGER);
         addConversions(Byte[].class, (rs, colNum) -> new Byte[0], Types.BINARY, Types.BLOB, Types.BIT);
         addConversions(InputStream.class, (rs, colNum) -> rs.getBinaryStream(colNum), Types.BINARY, Types.BLOB, Types.BIT);
-        addConversions(List.class, (rs, colNum) -> optional(rs.getString(colNum)).map(colVal -> new ArrayList<String>(Arrays.asList(colVal.split(",")))).orElse(new ArrayList<String>()), Types.VARCHAR);
+        addConversions(List.class, (rs, colNum) -> optional(rs, rs.getString(colNum)).map(colVal -> new ArrayList<String>(Arrays.asList(colVal.split(",")))).orElse(new ArrayList<String>()), Types.VARCHAR);
     }
     
     public <T> ResultSetValueConverter addConversions(Class<T> targetType, Conversion<T> conversion, int ... columnTypes)
@@ -85,54 +86,55 @@ public class ResultSetValueConverter
         mapping.columnType = columnType;
         return mapping;
     }
-
+    
     public ConversionTypeMapping<?> getMapping(Class<?> targetType, int columnType) {
         return conversions.keySet().stream().filter(mapping -> mapping.targetType.equals(targetType)
                     && (mapping.columnType == columnType)).findFirst().get();
     }
     
-    public <T> T convert(ResultSet rs, Class<T> target, String columnName)
+    public <T> T convert(ResultSet resultSet, Class<T> target, String columnName)
     {
-        final int columnNumber;
-        final int columnType;
-        try { columnNumber = rs.findColumn(columnName); } catch (SQLException ex) { throw new RuntimeException(ex); }
-        try { columnType = sqlType(rs, columnNumber); } catch (SQLException ex) { throw new RuntimeException(ex); }
-        Conversion<?> standardConversion = conversions.get(conversionMapping(target, columnType));
+        final int columnNumber = columnNumberByName(resultSet, columnName);
+        final int columnType = sqlType(resultSet, columnNumber);
+        final Conversion<?> standardConversion = conversions.get(conversionMapping(target, columnType));
         if (standardConversion != null) {
-            try { return ((Conversion<T>) standardConversion).convert(rs, columnNumber); }
-            catch (SQLException ex) { throw new RuntimeException(ex); }
+            return convertWith((Conversion<T>) standardConversion, resultSet, columnNumber);
         }
-        else
-        {
-            if (Enum.class.isAssignableFrom(target)) {
-                try { return (T) convertToEnum(rs, columnNumber, (Class<Enum>) target); }
-                catch (SQLException ex) { throw new RuntimeException(ex); }
-            }
-            else {
-                throw new NoSuchElementException("No natural conversion found.");
-            }
+        else if (Enum.class.isAssignableFrom(target)) {
+            return (T) convertToEnum(resultSet, columnNumber, (Class<Enum>) target);
+        }
+        else {
+            throw new NoSuchElementException("No natural conversion found.");
         }
     }
     
-    protected <E extends Enum<E>> E convertToEnum(ResultSet rs, int columnNumber, Class<E> enumClass) throws SQLException {
-        return convertToEnum(rs.getString(columnNumber), enumClass);
+    protected <T> T convertWith(Conversion<T> conversion, ResultSet resultSet, int columnNumber) {
+        try { return conversion.convert(resultSet, columnNumber); }
+        catch (SQLException ex) { throw new RuntimeException(ex); }
+    }
+    
+    protected <E extends Enum<E>> E convertToEnum(ResultSet resultSet, int columnNumber, Class<E> enumClass) {
+        try { return convertToEnum(resultSet.getString(columnNumber), enumClass); }
+        catch (SQLException ex) { throw new RuntimeException(ex); }
     }
     
     protected <E extends Enum<E>> E convertToEnum(String value, Class<E> enumClass) {
         return Enum.valueOf(enumClass, value);
     }
 
-    protected int sqlType(ResultSet rs, int columnNumber) throws SQLException {
-        return rs.getMetaData().getColumnType(columnNumber);
+    protected int columnNumberByName(ResultSet resultSet, String columnName) {
+        try { return resultSet.findColumn(columnName); }
+        catch (SQLException ex) { throw new RuntimeException(ex); }
     }
 
-    protected void logConversionMatch(Class<?> target, int columnType, Conversion<?> conversionByGet, ConversionTypeMapping<?> mappingByGetMapping) {
-        if (conversionByGet == null && mappingByGetMapping != null) {
-            System.out.println("Preemptive WTF mate");
-        }
+    protected int sqlType(ResultSet resultSet, int columnNumber) {
+        try { return resultSet.getMetaData().getColumnType(columnNumber); }
+        catch (SQLException ex) { throw new RuntimeException(ex); }
     }
-    
-    protected <T> Optional<T> optional(T columnValue) {
-        return Optional.ofNullable(columnValue);
+
+    protected <T> Optional<T> optional(ResultSet resultSet, T conversionValue) {
+        try { if (resultSet.wasNull()) conversionValue = null; }
+        catch (SQLException ex) { throw new RuntimeException(ex); }
+        return Optional.ofNullable(conversionValue);
     }
 }

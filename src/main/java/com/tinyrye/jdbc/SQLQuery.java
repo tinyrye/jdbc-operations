@@ -9,18 +9,17 @@ import java.util.List;
 import java.util.function.Supplier;
 import javax.sql.DataSource;
 
-public class SQLQuery<T> extends SQLOperation<ResultHandler>
+public class SQLQuery extends SQLOperation<ResultHandler>
 {
     private Supplier<String> sql;
-    private RowConverter<T> rowConverter;
 
     public SQLQuery(DataSource connectionProvider) {
         super(connectionProvider);
     }
     
-    public SQLQuery<T> sql(String sql) { this.sql = (() -> sql); return this; }
-    public SQLQuery<T> sql(Supplier<String> sql) { this.sql = sql; return this; }
-    public SQLQuery<T> parameterSetter(ParameterSetter parameterSetter) { super.parameterSetter(parameterSetter); return this; }
+    public SQLQuery sql(String sql) { this.sql = (() -> sql); return this; }
+    public SQLQuery sql(Supplier<String> sql) { this.sql = sql; return this; }
+    public SQLQuery parameterSetter(ParameterSetter parameterSetter) { super.parameterSetter(parameterSetter); return this; }
     
     @Override
     protected ResultHandler performOperation(Connection connection,
@@ -29,12 +28,11 @@ public class SQLQuery<T> extends SQLOperation<ResultHandler>
     {
         PreparedStatement statement = null;
         ResultSet resultSet = null;
-        List<T> resultValues = new ArrayList<T>();
         statement = connection.prepareStatement(sql.get());
-        closeables.add(statement);
+        // closeables.add(statement);
         parameterSetter.setValues(values, statement);
         resultSet = statement.executeQuery();
-        closeables.add(resultSet);
+        // ResultHandler usage will close the result set
         return new ResultHandler(resultSet);
     }
 }

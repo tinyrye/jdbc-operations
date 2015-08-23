@@ -10,6 +10,20 @@ import javax.sql.DataSource;
 
 public abstract class SQLOperation<T>
 {
+    /**
+     * Support method for you if you have Statements, ResultSets, etc. to close.
+     * Usage is typically:
+     * <code>
+     *   statement = close(statement);
+     * </code>
+     * @return <code>null</code> unconditially so you can set your resource to null
+     * after closure
+     */
+    public static void closeQuietly(AutoCloseable resource) {
+        try { if (resource != null) resource.close(); }
+        catch (Exception ex) { /* shhhh! */ }
+    }
+
     protected final DataSource connectionProvider;
 	protected ParameterSetter parameterSetter = new ParameterSetter();
     
@@ -36,18 +50,4 @@ public abstract class SQLOperation<T>
     	List values,
     	List<AutoCloseable> closeables)
     		throws SQLException;
-    
-    /**
-     * Support method for you if you have Statements, ResultSets, etc. to close.
-     * Usage is typically:
-     * <code>
-     *   statement = close(statement);
-     * </code>
-     * @return <code>null</code> unconditially so you can set your resource to null
-     * after closure
-     */
-    protected void closeQuietly(AutoCloseable resource) {
-        try { if (resource != null) resource.close(); }
-        catch (Exception ex) { /* shhhh! */ }
-    }
 }

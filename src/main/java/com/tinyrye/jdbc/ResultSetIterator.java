@@ -8,6 +8,7 @@ import java.util.NoSuchElementException;
 
 public class ResultSetIterator implements Iterator<ResultSet>
 {
+    private boolean inIteration = false;
     private final ResultSet resultSet;
     
     public ResultSetIterator(ResultSet resultSet) {
@@ -15,13 +16,20 @@ public class ResultSetIterator implements Iterator<ResultSet>
     }
     
     @Override
-    public boolean hasNext() {
-        try { return resultSet.next(); } catch (SQLException ex) { throw new RuntimeException(ex); }
+    public boolean hasNext()
+    {
+        if (inIteration) {
+            return true;
+        }
+        else {
+            try { inIteration = true; return resultSet.next(); }
+            catch (SQLException ex) { throw new RuntimeException(ex); }
+        }
     }
     
     @Override
     public ResultSet next() {
-        if (hasNext()) return resultSet;
+        if (hasNext()) { inIteration = false; return resultSet; }
         else throw new NoSuchElementException("Passed end of result set.");
     }
 }

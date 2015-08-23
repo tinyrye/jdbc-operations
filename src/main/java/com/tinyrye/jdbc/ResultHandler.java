@@ -15,13 +15,17 @@ import java.util.function.Function;
 public class ResultHandler
 {
     public static void process(ResultSet resultSet, Consumer<ResultSet> rowProcessor) {
-        new ResultSetIterator(resultSet).forEachRemaining(rowProcessor);
+        try { new ResultSetIterator(resultSet).forEachRemaining(rowProcessor); }
+        finally { SQLOperation.closeQuietly(resultSet); }
     }
     
-    public static <T> List<T> map(ResultSet resultSet, Function<ResultSet,T> rowConverter) {
-        List<T> rowResults = new ArrayList<T>();
-        new ResultSetIterator(resultSet).forEachRemaining(resultSetOfIteration -> rowResults.add(rowConverter.apply(resultSetOfIteration)));
-        return rowResults;
+    public static <T> List<T> map(ResultSet resultSet, Function<ResultSet,T> rowConverter)
+    {
+        try {
+            List<T> rowResults = new ArrayList<T>();
+            new ResultSetIterator(resultSet).forEachRemaining(resultSetOfIteration -> rowResults.add(rowConverter.apply(resultSetOfIteration)));
+            return rowResults;
+        } finally { SQLOperation.closeQuietly(resultSet); }
     }
     
     private final ResultSet resultSet;
