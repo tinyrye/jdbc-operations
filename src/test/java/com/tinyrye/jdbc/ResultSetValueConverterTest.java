@@ -49,8 +49,6 @@ public class ResultSetValueConverterTest
         Mockito.when(resultSet.getString(6)).thenReturn("abc,def,ghi");
         Mockito.when(resultSet.getString(7)).thenReturn(null);
 
-        Assert.assertNotNull(testedObject.getMapping(Integer.class, Types.INTEGER));
-        Assert.assertNotNull(testedObject.getMapping(List.class, Types.VARCHAR));
         Assert.assertEquals(TestStatus.EENIE, testedObject.convert(resultSet, TestStatus.class, "status"));
         Assert.assertEquals((Integer) 123456, testedObject.convert(resultSet, Integer.class, "loginCount"));
         Asserts.assertOrderedEquivalent(Arrays.asList("abc", "def", "ghi"), testedObject.convert(resultSet, List.class, "loginIds"));

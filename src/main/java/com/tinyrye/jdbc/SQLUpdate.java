@@ -25,7 +25,7 @@ public class SQLUpdate extends SQLOperation<Integer>
 	@Override
     protected Integer performOperation(Connection connection,
     	List values,
-    	List<AutoCloseable> closeables) throws SQLException
+    	OperationResourceManager closeables) throws SQLException
     {
 		PreparedStatement statement = connection.prepareStatement(sql.get());
         closeables.add(statement);

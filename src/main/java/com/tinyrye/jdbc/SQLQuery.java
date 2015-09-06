@@ -24,15 +24,16 @@ public class SQLQuery extends SQLOperation<ResultHandler>
     @Override
     protected ResultHandler performOperation(Connection connection,
         List values,
-        List<AutoCloseable> closeables) throws SQLException
+        OperationResourceManager closeables) throws SQLException
     {
         PreparedStatement statement = null;
         ResultSet resultSet = null;
         statement = connection.prepareStatement(sql.get());
-        // closeables.add(statement);
+        closeables.add(statement);
         parameterSetter.setValues(values, statement);
         resultSet = statement.executeQuery();
-        // ResultHandler usage will close the result set
-        return new ResultHandler(resultSet);
+        OperationResourceManager deferredCloseables = new OperationResourceManager(closeables);
+        // ResultHandler usage must close the statement and result set
+        return new ResultHandler(resultSet).takeoverFor(deferredCloseables);
     }
 }

@@ -10,20 +10,6 @@ import javax.sql.DataSource;
 
 public abstract class SQLOperation<T>
 {
-    /**
-     * Support method for you if you have Statements, ResultSets, etc. to close.
-     * Usage is typically:
-     * <code>
-     *   statement = close(statement);
-     * </code>
-     * @return <code>null</code> unconditially so you can set your resource to null
-     * after closure
-     */
-    public static void closeQuietly(AutoCloseable resource) {
-        try { if (resource != null) resource.close(); }
-        catch (Exception ex) { /* shhhh! */ }
-    }
-
     protected final DataSource connectionProvider;
 	protected ParameterSetter parameterSetter = new ParameterSetter();
     
@@ -33,12 +19,16 @@ public abstract class SQLOperation<T>
 	
 	public SQLOperation<T> parameterSetter(ParameterSetter parameterSetter) { this.parameterSetter = parameterSetter; return this; }
     
-    public T call(OperationValues values) {
-    	List<AutoCloseable> closeables = new ArrayList<AutoCloseable>();
+    public T call(OperationValues values)
+    {
+    	OperationResourceManager closeables = new OperationResourceManager();
     	T result = null;
-        try { result = performOperation(connectionProvider.getConnection(), values.values(), closeables); }
-        catch (SQLException ex) { throw new RuntimeException(ex); }
-        finally { closeables.stream().forEach(closeable -> closeQuietly(closeable)); }
+        try {
+            Connection connection = connectionProvider.getConnection();
+            closeables.add(connection);
+            result = performOperation(connection, values.values(), closeables);
+        } catch (SQLException ex) { throw new RuntimeException(ex); }
+        finally { closeables.close(); }
         return result;
     }
     
@@ -48,6 +38,6 @@ public abstract class SQLOperation<T>
      */
     protected abstract T performOperation(Connection connection,
     	List values,
-    	List<AutoCloseable> closeables)
+    	OperationResourceManager closeables)
     		throws SQLException;
 }
