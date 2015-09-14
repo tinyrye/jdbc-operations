@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.ParameterMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.Statement;
 import java.sql.Types;
 
@@ -23,12 +24,10 @@ import org.mockito.runners.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class SQLInsertTest
 {
-    public static class TestEntity
-    {
+    public static class TestEntity {
         public Integer id;
         public String name;
         public Boolean value;
-
         public TestEntity id(Integer id) { this.id = id; return this; }
         public TestEntity name(String name) { this.name = name; return this; }
         public TestEntity value(Boolean value) { this.value = value; return this; }
@@ -49,8 +48,11 @@ public class SQLInsertTest
     @Mock
     private ResultSet mockInsertGeneratedKeys;
 
+    @Mock
+    private ResultSetMetaData mockInsertGeneratedKeysMetaData;
+
     @Test
-    public void testCallForFirstGeneratedKey() throws Exception
+    public void testCall() throws Exception
     {
         String testSql = "INSERT INTO foobar (name, value) VALUES (?, ?)";
 
@@ -62,13 +64,15 @@ public class SQLInsertTest
         Mockito.when(mockParameterMetaData.getParameterType(1)).thenReturn(Types.VARCHAR);
         Mockito.when(mockParameterMetaData.getParameterType(2)).thenReturn(Types.BOOLEAN);
         Mockito.when(mockStatement.getGeneratedKeys()).thenReturn(mockInsertGeneratedKeys);
+        Mockito.when(mockInsertGeneratedKeys.getMetaData()).thenReturn(mockInsertGeneratedKeysMetaData);
+        Mockito.when(mockInsertGeneratedKeysMetaData.getColumnType(1)).thenReturn(Types.INTEGER);
         Mockito.when(mockInsertGeneratedKeys.next()).thenReturn(Boolean.TRUE).thenReturn(Boolean.FALSE);
         Mockito.when(mockInsertGeneratedKeys.getInt(1)).thenReturn((Integer) 123456);
 
         TestEntity entity = new TestEntity();
         OperationValues insertValues = () -> Arrays.asList("hello world", Boolean.TRUE);
 
-        testedObject.callForFirstGeneratedKey(insertValues, entity, TestEntity::id);
+        testedObject.call(insertValues).firstRowKey(entity, TestEntity::id);
         Mockito.verify(mockStatement).setString(1, "hello world");
         Mockito.verify(mockStatement).setBoolean(2, Boolean.TRUE);
 

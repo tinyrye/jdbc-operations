@@ -8,9 +8,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 import javax.sql.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SQLQuery extends SQLOperation<ResultHandler>
 {
+    private static final Logger LOG = LoggerFactory.getLogger(SQLQuery.class);
+
     private Supplier<String> sql;
 
     public SQLQuery(DataSource connectionProvider) {
@@ -28,7 +32,11 @@ public class SQLQuery extends SQLOperation<ResultHandler>
     {
         PreparedStatement statement = null;
         ResultSet resultSet = null;
-        statement = connection.prepareStatement(sql.get());
+        String sql = this.sql.get();
+        LOG.debug("Executing query: query={}; parameterValues={}", new Object[] {
+            sql, values
+        });
+        statement = connection.prepareStatement(sql);
         closeables.add(statement);
         parameterSetter.setValues(values, statement);
         resultSet = statement.executeQuery();

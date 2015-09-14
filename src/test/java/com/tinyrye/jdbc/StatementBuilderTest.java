@@ -1,5 +1,7 @@
 package com.tinyrye.jdbc;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -62,5 +64,44 @@ public class StatementBuilderTest
             "AND", testOrElse);
         Assert.assertEquals("SELECT * FROM foo WHERE foo.y = 'la-dee-da'\nAND foo.x IS NULL",
             testedObject.toString());
+    }
+
+    @Test
+    public void testInClauseIfNotEmpty()
+    {
+        List<Object> sideEffectParamValues = new ArrayList<Object>();
+        List<Object> testRhsValues = null;
+        String testLhs = "id";
+        Supplier<String> testIfNoInClause = () -> String.format("%s IS NULL", testLhs);
+        StatementBuilder testedObject = new StatementBuilder("SELECT * FROM foo")
+            .appendWhereClauseLine(StatementBuilder.inClauseIfNotEmpty(
+                    testLhs, Optional.ofNullable(testRhsValues), sideEffectParamValues, 0
+                ), "AND", testIfNoInClause);
+        Assert.assertEquals("SELECT * FROM foo\nWHERE id IS NULL", testedObject.toString());
+        Assert.assertEquals(0, sideEffectParamValues.size());
+
+        sideEffectParamValues.clear();
+        testRhsValues = new ArrayList<Object>();
+        testedObject = new StatementBuilder("SELECT * FROM foo")
+            .appendWhereClauseLine(StatementBuilder.inClauseIfNotEmpty(
+                    testLhs, Optional.ofNullable(testRhsValues), sideEffectParamValues, 0
+                ), "AND", testIfNoInClause);
+        Assert.assertEquals("SELECT * FROM foo\nWHERE id IS NULL", testedObject.toString());
+        Assert.assertEquals(0, sideEffectParamValues.size());
+
+        sideEffectParamValues.clear();
+        testRhsValues = new ArrayList<Object>();
+        testRhsValues.add((Integer) 1);
+        testRhsValues.add((Integer) 2);
+        testRhsValues.add("besuretodrinkyourovaltine");
+        testedObject = new StatementBuilder("SELECT * FROM foo")
+            .appendWhereClauseLine(StatementBuilder.inClauseIfNotEmpty(
+                    testLhs, Optional.ofNullable(testRhsValues), sideEffectParamValues, 0
+                ), "AND", testIfNoInClause);
+        Assert.assertEquals("SELECT * FROM foo\nWHERE id in (?, ?, ?)", testedObject.toString());
+        Assert.assertEquals(3, sideEffectParamValues.size());
+        Assert.assertEquals(testRhsValues.get(0), sideEffectParamValues.get(0));
+        Assert.assertEquals(testRhsValues.get(1), sideEffectParamValues.get(1));
+        Assert.assertEquals(testRhsValues.get(2), sideEffectParamValues.get(2));
     }
 }

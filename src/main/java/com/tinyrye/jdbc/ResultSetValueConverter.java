@@ -61,9 +61,12 @@ public class ResultSetValueConverter
         return this;
     }
     
-    public <T> T convert(ResultSet resultSet, Class<T> target, String columnName)
+    public <T> T convert(ResultSet resultSet, Class<T> target, String columnName) {
+        return convert(resultSet, target, columnNumberByName(resultSet, columnName));
+    }
+
+    public <T> T convert(ResultSet resultSet, Class<T> target, int columnNumber)
     {
-        final int columnNumber = columnNumberByName(resultSet, columnName);
         final int columnType = sqlType(resultSet, columnNumber);
         final Conversion<?> standardConversion = conversions.get(ConversionTypeMapping.of(target, columnType));
         if (standardConversion != null) {
@@ -75,6 +78,10 @@ public class ResultSetValueConverter
         else {
             throw new NoSuchElementException("No natural conversion found.");
         }
+    }
+
+    public <T> Optional<T> convertToOptional(ResultSet resultSet, Class<T> target, String columnName) {
+        return Optional.ofNullable(convert(resultSet, target, columnName));
     }
     
     protected <T> T convertWith(Conversion<T> conversion, ResultSet resultSet, int columnNumber) {

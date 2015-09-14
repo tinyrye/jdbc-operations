@@ -31,7 +31,7 @@ public class ParameterSetter
     }
     
     private final Map<ConversionTypeMapping<?>,Setter<?>> setters = new HashMap<ConversionTypeMapping<?>,Setter<?>>();
-    
+
     public ParameterSetter() {
         addSetter(String.class, (stmt, colNum, val) -> stmt.setString(colNum, val), Types.VARCHAR, Types.CHAR);
         addSetter(Integer.class, (stmt, colNum, val) -> stmt.setInt(colNum, val.intValue()), Types.BIGINT, Types.SMALLINT, Types.TINYINT, Types.INTEGER);

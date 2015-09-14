@@ -1,8 +1,11 @@
 package com.tinyrye.jdbc;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 public class StatementBuilder implements Supplier<String>
 {
@@ -28,6 +31,45 @@ public class StatementBuilder implements Supplier<String>
     
     public static Optional<String> binaryClauseIfNotNull(String lhs, String op, Optional<Object> paramAsRhs) {
         return paramAsRhs.map(param -> String.format("%s %s ?", lhs, op));
+    }
+
+    /**
+     * Generate parameter placeholders lhs in (?, ?, ?...) in-clause.
+     * @param allStatementParams the full list of parameters passed to the statement via OperationValues
+     * @param statementParamsInsertAt The spot in <code>allStatementParams</code> to insert the in clause param values.
+     */
+    public static Supplier<String> inClause(String lhs, List<?> inValues, List<Object> allStatementParams, int statementParamsInsertAt)
+    {
+        return () -> {
+            final AtomicInteger statementParamsInsertCursor = new AtomicInteger(statementParamsInsertAt);
+            return String.format("%s in (%s)", lhs,
+                inValues.stream().map(inValue -> {
+                    allStatementParams.add(statementParamsInsertCursor.getAndIncrement(), inValue);
+                    return "?";
+                }).collect(Collectors.joining(", "))
+            );
+        };
+    }
+
+    /**
+     * Generate parameter placeholders lhs in (?, ?, ?...) in-clause.
+     * @param allStatementParams the full list of parameters passed to the statement via OperationValues
+     * @param statementParamsInsertAt The spot in <code>allStatementParams</code> to insert the in clause param values.
+     */
+    public static Optional<String> inClauseIfNotEmpty(String lhs, Optional<List<?>> inValues, List<Object> allStatementParams, int statementParamsInsertAt)
+    {
+        final AtomicInteger statementParamsInsertCursor = new AtomicInteger(statementParamsInsertAt);
+        if (inValues.isPresent() && ! inValues.get().isEmpty()) {
+            return Optional.of(String.format("%s in (%s)", lhs,
+                inValues.get().stream().map(inValue -> {
+                    allStatementParams.add(statementParamsInsertCursor.getAndIncrement(), inValue);
+                    return "?";
+                }).collect(Collectors.joining(", ")))
+            );
+        }
+        else {
+            return Optional.<String>empty();
+        }
     }
 
     public static String where() {
@@ -103,6 +145,9 @@ public class StatementBuilder implements Supplier<String>
         if (needsToJoin) sql.append(clauseJoin);
         sql.append(' ').append(sqlSegment.orElse(orElseSegment.get()));
         return this;
+    }
+    public StatementBuilder andWhereClauseLine(Supplier<String> sqlSegment) {
+        return appendWhereClauseLine(sqlSegment, "AND");
     }
     
     public StatementBuilder andWhereClauseLine(Optional<String> sqlSegment, Supplier<String> orElseSegment) {
