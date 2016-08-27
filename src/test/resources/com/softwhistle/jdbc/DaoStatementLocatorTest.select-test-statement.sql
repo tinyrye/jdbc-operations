@@ -1,0 +1,1 @@
+SELECT id, name, value FROM foobar WHERE column_x = 'zippity_dooda'
