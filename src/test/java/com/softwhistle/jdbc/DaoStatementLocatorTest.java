@@ -7,7 +7,7 @@ public class DaoStatementLocatorTest
 {
     @Test
     public void testGet() {
-        Assert.assertEquals("SELECT id, name, value FROM foobar WHERE column_x = 'zippity_dooda'",
-            new DaoStatementLocator(DaoStatementLocatorTest.class, "select-test-statement").get());
+    	DaoStatementLocator testedObject = new DaoStatementLocator(DaoStatementLocatorTest.class, "select-test-statement");
+        Assert.assertEquals("SELECT id, name, value FROM foobar WHERE column_x = 'zippity_dooda'", testedObject.get());
     }
 }
