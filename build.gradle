@@ -9,8 +9,16 @@ repositories {
 	mavenCentral()
 }
 
+install {
+    repositories.mavenInstaller {
+        pom.artifactId = 'jdbc-operations'
+    }
+}
+
 compileJava {
-	// options.compilerArgs.add('-Xlint:unchecked')
+    if (System.getProperty("compilerWarnings") != null) {
+        options.compilerArgs = ['-Xlint:unchecked']
+    }
 }
 
 dependencies {
