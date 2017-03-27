@@ -112,6 +112,6 @@ public class ParameterSetter
     }
 
     protected byte[] toByteArray(InputStream inputStream) {
-        return Operations.with(inputStream, (str) -> ByteStreams.toByteArray(str));
+        return Operations.with(inputStream).apply((str) -> ByteStreams.toByteArray(str));
     }
 }

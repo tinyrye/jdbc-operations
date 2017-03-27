@@ -1,6 +1,6 @@
 package com.softwhistle.jdbc;
 
-import static com.softwhistle.io.Operations.openThenWith;
+import static com.softwhistle.io.Operations.open;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -21,7 +21,7 @@ public class DaoStatementLocator implements Supplier<String>
 
     @Override
     public String get() {
-        return openThenWith(this::readerToResource, (rdr) -> CharStreams.toString(rdr));
+        return open(this::readerToResource).apply((rdr) -> CharStreams.toString(rdr));
     }
 
     public Reader readerToResource() {
