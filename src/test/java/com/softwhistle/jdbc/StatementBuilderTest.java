@@ -104,4 +104,11 @@ public class StatementBuilderTest
         Assert.assertEquals(testRhsValues.get(1), sideEffectParamValues.get(1));
         Assert.assertEquals(testRhsValues.get(2), sideEffectParamValues.get(2));
     }
+
+    @Test
+    public void testReplacePlaceholder() {
+        StatementBuilder builder = new StatementBuilder("SELECT * FROM ${foobar}");
+        builder.replacePlaceholder("foobar", () -> "this_old_table");
+        Assert.assertEquals("SELECT * FROM this_old_table", builder.toString());
+    }
 }

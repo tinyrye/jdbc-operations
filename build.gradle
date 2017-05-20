@@ -4,6 +4,9 @@ apply plugin: 'maven'
 group = "com.softwhistle"
 version = "1.0.0-SNAPSHOT"
 
+sourceCompatibility = "1.8"
+targetCompatibility = "1.8"
+
 repositories {
 	mavenLocal()
 	mavenCentral()

@@ -74,10 +74,10 @@ public class ParameterSetter
         }
         else
         {
-            LOG.debug("Setting parameter value: columnNumber={}; type={}", new Object[] {
-                columnNumber, value.getClass().getName()
-            });
             final int columnType = sqlType(statement, columnNumber);
+            LOG.debug("Setting parameter value: columnNumber={}; valueType={}; columnType={}", new Object[] {
+                columnNumber, value.getClass().getName(), sqlTypeCode(columnType)
+            });
             final Setter<?> standardSetter = setters.get(ConversionTypeMapping.of(value.getClass(), columnType));
             if (standardSetter != null) {
                 setValueWith(standardSetter, statement, value, columnNumber);
@@ -109,6 +109,49 @@ public class ParameterSetter
     protected int sqlType(PreparedStatement statement, int columnNumber) {
         try { return statement.getParameterMetaData().getParameterType(columnNumber); }
         catch (SQLException ex) { throw new RuntimeException(ex); }
+    }
+
+    protected String sqlTypeCode(int sqlType) {
+        if (sqlType == Types.ARRAY) return "ARRAY";
+        else if (sqlType == Types.BIGINT) return "BIGINT";
+        else if (sqlType == Types.BINARY) return "BINARY";
+        else if (sqlType == Types.BIT) return "BIT";
+        else if (sqlType == Types.BLOB) return "BLOB";
+        else if (sqlType == Types.BOOLEAN) return "BOOLEAN";
+        else if (sqlType == Types.CHAR) return "CHAR";
+        else if (sqlType == Types.CLOB) return "CLOB";
+        else if (sqlType == Types.DATALINK) return "DATALINK";
+        else if (sqlType == Types.DATE) return "DATE";
+        else if (sqlType == Types.DECIMAL) return "DECIMAL";
+        else if (sqlType == Types.DISTINCT) return "DISTINCT";
+        else if (sqlType == Types.DOUBLE) return "DOUBLE";
+        else if (sqlType == Types.FLOAT) return "FLOAT";
+        else if (sqlType == Types.INTEGER) return "INTEGER";
+        else if (sqlType == Types.JAVA_OBJECT) return "JAVA_OBJECT";
+        else if (sqlType == Types.LONGNVARCHAR) return "LONGNVARCHAR";
+        else if (sqlType == Types.LONGVARBINARY) return "LONGVARBINARY";
+        else if (sqlType == Types.LONGVARCHAR) return "LONGVARCHAR";
+        else if (sqlType == Types.NCHAR) return "NCHAR";
+        else if (sqlType == Types.NCLOB) return "NCLOB";
+        else if (sqlType == Types.NULL) return "NULL";
+        else if (sqlType == Types.NUMERIC) return "NUMERIC";
+        else if (sqlType == Types.NVARCHAR) return "NVARCHAR";
+        else if (sqlType == Types.OTHER) return "OTHER";
+        else if (sqlType == Types.REAL) return "REAL";
+        else if (sqlType == Types.REF) return "REF";
+        else if (sqlType == Types.REF_CURSOR) return "REF_CURSOR";
+        else if (sqlType == Types.ROWID) return "ROWID";
+        else if (sqlType == Types.SMALLINT) return "SMALLINT";
+        else if (sqlType == Types.SQLXML) return "SQLXML";
+        else if (sqlType == Types.STRUCT) return "STRUCT";
+        else if (sqlType == Types.TIME) return "TIME";
+        else if (sqlType == Types.TIME_WITH_TIMEZONE) return "TIME_WITH_TIMEZONE";
+        else if (sqlType == Types.TIMESTAMP) return "TIMESTAMP";
+        else if (sqlType == Types.TIMESTAMP_WITH_TIMEZONE) return "TIMESTAMP_WITH_TIMEZONE";
+        else if (sqlType == Types.TINYINT) return "TINYINT";
+        else if (sqlType == Types.VARBINARY) return "VARBINARY";
+        else if (sqlType == Types.VARCHAR) return "VARCHAR";
+        else return "UNKNOWN";
     }
 
     protected byte[] toByteArray(InputStream inputStream) {

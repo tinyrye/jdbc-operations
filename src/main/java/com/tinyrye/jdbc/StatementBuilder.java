@@ -38,17 +38,22 @@ public class StatementBuilder implements Supplier<String>
      * @param allStatementParams the full list of parameters passed to the statement via OperationValues
      * @param statementParamsInsertAt The spot in <code>allStatementParams</code> to insert the in clause param values.
      */
-    public static Supplier<String> inClause(String lhs, List<?> inValues, List<Object> allStatementParams, int statementParamsInsertAt)
+    public static Supplier<String> inClause(String lhs, List<?> inValues, List<Object> allStatementParams, int statementParamsInsertAt) {
+        return () -> String.format("%s in (%s)", lhs, paramCsv(inValues, allStatementParams, statementParamsInsertAt));
+    }
+
+    /**
+     * Generate parameter placeholders lhs in (?, ?, ?...) in-clause.
+     * @param allStatementParams the full list of parameters passed to the statement via OperationValues
+     * @param statementParamsInsertAt The spot in <code>allStatementParams</code> to insert the in clause param values.
+     */
+    public static String paramCsv(List<?> inValues, List<Object> allStatementParams, int statementParamsInsertAt)
     {
-        return () -> {
-            final AtomicInteger statementParamsInsertCursor = new AtomicInteger(statementParamsInsertAt);
-            return String.format("%s in (%s)", lhs,
-                inValues.stream().map(inValue -> {
-                    allStatementParams.add(statementParamsInsertCursor.getAndIncrement(), inValue);
-                    return "?";
-                }).collect(Collectors.joining(", "))
-            );
-        };
+        final AtomicInteger statementParamsInsertCursor = new AtomicInteger(statementParamsInsertAt);
+        return inValues.stream().map(inValue -> {
+            allStatementParams.add(statementParamsInsertCursor.getAndIncrement(), inValue);
+            return "?";
+        }).collect(Collectors.joining(", "));
     }
 
     /**
@@ -152,6 +157,11 @@ public class StatementBuilder implements Supplier<String>
     
     public StatementBuilder andWhereClauseLine(Optional<String> sqlSegment, Supplier<String> orElseSegment) {
         return appendWhereClauseLine(sqlSegment, "AND", orElseSegment);
+    }
+
+    public StatementBuilder replacePlaceholder(String placeholder, Supplier<String> sqlSegment) {
+        sql = new StringBuilder(sql.toString().replaceAll("\\$\\{" + placeholder + "\\}", sqlSegment.get()));
+        return this;
     }
     
     @Override
